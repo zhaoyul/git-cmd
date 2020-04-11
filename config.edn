@@ -1,0 +1,4 @@
+{:repos [{:url "https://github.com/zhaoyul/snippets.git"
+          :name "代码片段"
+          :authors {"lizy" "李照宇"
+                    "kevin.li" "李照宇"}}]}
