@@ -1,5 +1,5 @@
 (ns git-cmd.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :as t]
             [clojure.java.io :as io]
             [clojure.java.shell :refer [sh with-sh-dir]]
             [git-cmd.core :as sut]))
@@ -38,10 +38,10 @@
   "测试之后执行"
   []
   (with-sh-dir tmp-dir
-    (sh "sh" "-c" "rm -rf  /tmp/git-tes ")    )
+    (sh "sh" "-c" "rm -rf  /tmp/git-test/ ")    )
   )
 
-(use-fixtures
+(t/use-fixtures
   :once
   ;; :each 用于每一组deftest 都执行的场景
   ;; :once fixture在当前namespace只执行一次
@@ -54,31 +54,31 @@
 (with-private-fns
   [git-cmd.core [has-sub-dir? repo-dir? file-end-with?
                  authors-stats]]
-  (deftest 测试目录和文件相关操作
-    (testing "第一组test"
-      (is (nil? (has-sub-dir? (io/file tmp-dir ) ".gt")) "没有.gt文件夹")
-      (is (has-sub-dir? (io/file tmp-dir ) ".git") "还应该有.git文件夹")
-      (is (repo-dir? (io/file tmp-dir )))
-      (is (nil? (repo-dir? (io/file "/" ))))
+  (t/deftest 测试目录和文件相关操作
+    (t/testing "第一组test"
+      (t/is (nil? (has-sub-dir? (io/file tmp-dir ) ".gt")) "没有.gt文件夹")
+      (t/is (has-sub-dir? (io/file tmp-dir ) ".git") "还应该有.git文件夹")
+      (t/is (repo-dir? (io/file tmp-dir )))
+      (t/is (nil? (repo-dir? (io/file "/" ))))
 
-      (is (file-end-with? (io/file "abc.abc" ) "abc"))
-      (is (file-end-with? (io/file "abc.abc.xf" ) "xf"))
-      (is (not (file-end-with? (io/file "abc.abc.xf" ) "x-f")))))
+      (t/is (file-end-with? (io/file "abc.abc" ) "abc"))
+      (t/is (file-end-with? (io/file "abc.abc.xf" ) "xf"))
+      (t/is (not (file-end-with? (io/file "abc.abc.xf" ) "x-f")))))
 
 
-  (deftest 测试repo相关
-    (testing "第一组test"
+  (t/deftest 测试repo相关
+    (t/testing "第一组test"
       (prn  (sut/authors-stats tmp-dir))
-      (is (let [m (sut/authors-stats tmp-dir)]
-            (and (map? m)
-                 (= 1 (first (vals m))))) )
+      (t/is (let [m (sut/authors-stats tmp-dir)]
+              (and (map? m)
+                   (= 1 (first (vals m))))) )
       ))
 
-  (deftest 测试配置文件相关
-    (testing "第一组test"
+  (t/deftest 测试配置文件相关
+    (t/testing "第一组test"
       (prn  (sut/authors-stats tmp-dir))
-      (is (let [m (sut/authors-stats tmp-dir)]
-            (and (map? m)
-                 (= 1 (first (vals m))))) )
+      (t/is (let [m (sut/authors-stats tmp-dir)]
+              (and (map? m)
+                   (= 1 (first (vals m))))) )
       ))
   )

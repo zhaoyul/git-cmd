@@ -3,6 +3,8 @@
             [clojure.string :as s]
             [clojure.pprint :refer [pprint]]
             [clojure.edn :as edn]
+            [com.hypirion.clj-xchart :as c]
+            [java-time :as jt]
             [clojure.tools.cli :refer [parse-opts]]
             [clj-jgit.querying :refer [rev-list commit-info changed-files-with-patch]]
             [clj-jgit.porcelain :refer [git-blame load-repo git-log git-fetch git-clone git-add git-commit git-push]])
@@ -120,6 +122,114 @@
          (reduce  (fn [r m]
                     (merge-with + r m))
                   {}))))
+
+
+(defn category-chart-data [m]
+  (reduce-kv (fn [m k v]
+               (assoc-in m [(:name k) (:file k)] v))
+             {}
+             m))
+
+(defn current-date-str [date]
+  (jt/format "YYYY-MM-dd" date))
+
+(defn stats-file [repo date]
+  (str "./tmp/" repo "/" (current-date-str date) "-status.edn"
+       ))
+
+(defn processed? [repo date]
+  (.exists (io/file (stats-file repo date))))
+
+(comment
+  (stats-file "customplatform" (jt/local-date))
+  (processed? "customplatform" (jt/local-date))
+  )
+
+(defn retrive-loc-from-file [repo date]
+  (->> (stats-file repo date)
+       slurp
+       edn/read-string))
+
+(defn generate-loc-anew [repo date data]
+  (let [file (stats-file repo date)
+        _ (io/make-parents file )]
+    (-> (stats-file repo date)
+        (spit data))
+    data))
+
+(defn repo-name [repo-dir]
+  (s/replace repo-dir #".*/" ""))
+
+(defn sync-stats [repo-dir date]
+  (if (processed? (repo-name repo-dir) date)
+    (retrive-loc-from-file (repo-name repo-dir) date)
+    (generate-loc-anew (repo-name repo-dir) date (authors-stats repo-dir) )))
+
+
+;; 人员对应关系也是要到配置文件
+(def authors {"Nie JianLong"   "聂建龙"
+              "NieJianlong"    "聂建龙"
+              "chuanwu zhu"    "聂建龙"
+              "Kevin li"       "李照宇"
+              "Kevin.li"       "李照宇"
+              "kevin.li"       "李照宇"
+              "lizy"           "李照宇"
+              "dirk.sun"       "孙东和"
+              "Damon"          "沈友谊"
+              "Tony"           "杨鲁鹏"
+              "cisco.luo"      "罗德玉"
+              "leilei.s"       "孙磊磊"
+              "zhanghongyi"    "张弘毅"
+              "David Wu"       "吴伟"
+              "alisa.yang"     "杨柳"
+              "visen_lu"       "陆卫新"
+              "vise.lu"        "陆卫新"
+              "Murphy"         "贺茂丰"
+              "ElbertY"        "依力"
+              "Anna"           "赵阳"
+              "maofeng"        "贺茂丰"
+              "MaoFeng"        "贺茂丰"
+              "hcops"          "hcops..who??"
+              "ranmingsheng"   "冉明生"
+              "chris"          "冉明生"
+              "chirs"          "冉明生"
+              "ben"            "冉明生"
+              "marvin ma"      "马海强"
+              "strongfish"     "于壮壮"
+              "eric shao"      "邵夔"
+              "cui"            "崔云鹏"
+              "eric"           "崔云鹏"
+              "eric.cui"       "崔云鹏"
+              "henrydf"        "丁凡"
+              "WYX"            "丁凡"
+              "Henry"          "丁凡"})
+
+(defn category-chart-data [m]
+  (reduce-kv (fn [m k v]
+               (assoc-in m [(:name k) (:file k)] v))
+             {}
+             m))
+
+(defn re-name [input]
+  (reduce-kv (fn [m k v]
+               (if (get authors (:name k))
+                 (assoc m
+                        {:name (get authors (:name k)) :file (:file k)}
+                        (+ v (or (get m {:name (get authors (:name k)) :file (:file k)} ) 0)  ))
+                 (assoc m k v))) {} input))
+
+(comment
+  (c/view
+   (c/category-chart
+    (category-chart-data (re-name (sync-stats "../peptide" (jt/local-date))))
+    {:title "多肽代码分析"
+     :width 600
+     :height 400
+     :render-style :line
+     :theme :xchart
+     :y-axis {}
+     :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
+  )
 
 
 (def cli-options
