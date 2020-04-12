@@ -230,6 +230,138 @@
      :y-axis {}
      :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
   )
+
+
+(defn all-commits
+  "获得repo的所有commit, 注意是所有branch的commit"
+  [repo]
+  (->>  (rev-list repo)
+        (map  (partial commit-info repo))))
+
+(defn- rev-diff
+  "返回当前commit对应的patch, 返回值是patch的文本"
+  [rev-m]
+  (changed-files-with-patch (:repo rev-m) (:raw rev-m)))
+
+(defn- count-commit-lines
+  "为commit-map增加一个新的key, :add-delete 记录了修改的行数"
+  [rev]
+  (assoc
+   rev
+   :add-delete
+   (if-let [patch (rev-diff rev)]
+     {:add-line (count (re-seq #"\n\+" patch))
+      :delete-line (count (re-seq #"\n\-" patch))}
+     {:add-line 0
+      :delete-line 0})))
+
+#_(defn all-diffs [repo]
+    (->>  (rev-list repo)
+          (map  (partial count-commit-lines repo))))
+
+(defn time->date
+  "java.util.Date -> java-time的localdate"
+  [date]
+  (-> date
+      jt/instant
+      (.atZone (jt/zone-id))
+      (.toLocalDate)))
+
+(defn truncate-time-to-day
+  "util.Date 得到当前时间对应的0点."
+  ;; TODO: 这应该不是应该最好的方法....
+  [date]
+  (-> date
+      .toInstant
+      (.atZone (jt/zone-id))
+      (.toLocalDateTime)
+      (jt/truncate-to :days)
+      (.atZone (jt/zone-id))
+      .toInstant
+      (java.util.Date/from)))
+
+(defn rev->date
+  "从时间到日期, 返回localdate类型的rev map的日期"
+  [rev]
+  (-> rev :time time->date ))
+
+(defn commit-file-name
+  "commit的edn文件的名称, 一天一个, 作为后续的缓存使用"
+  [repo date]
+  (format "./tmp/%s/%s-commit.edn" repo (jt/format "YYYY-MM-dd" date) ))
+
+(defn commits-cached?
+  "判断缓存文件是否存在"
+  [repo date]
+  (.exists (io/file (commit-file-name repo date))))
+
+(defn gen-commits-anew
+  "产生一个新的commit edn文件到对应的磁盘位置"
+  [repo repo-dir date]
+  (let [file-name (commit-file-name repo date)
+        file (io/file file-name)
+        _ (io/make-parents file)
+        data (->> repo-dir
+                  load-repo
+                  all-commits
+                  (map #(select-keys % [:email
+                                        :time
+                                        :branches
+                                        :merge
+                                        :author
+                                        :id
+                                        :message]))
+                  vec)]
+    (spit file-name data)
+    data))
+
+(defn retrive-commits-from-cache
+  "从缓存读到相应的commit edn, 每天只执行一次就够了."
+  [repo date]
+  (let [file-name (commit-file-name repo date)]
+    (->> file-name
+         slurp
+         edn/read-string
+         )))
+
+(defn sync-commits
+  "写入commit edn, 做缓存用."
+  [repo repo-dir date]
+  (let [file-name (commit-file-name repo date)
+        file (io/file file-name)
+        _ (io/make-parents file)]
+
+    (if (commits-cached? repo date)
+      (retrive-commits-from-cache repo date)
+      (gen-commits-anew repo repo-dir date))))
+
+(defn jt-local-date->util-date [date]
+  (-> date
+      (.atStartOfDay)
+      (.atZone (jt/zone-id))
+      (.toInstant)
+      (java.util.Date/from)))
+
+(defn in-peroid [start end now]
+  (let [s (jt-local-date->util-date start)
+        e (jt-local-date->util-date end)]
+    (and (neg? (compare s   now ))
+         (neg? (compare now e)))))
+
+
+
+(defn re-name-commit [commit]
+  (if-let [new-name (authors (:author commit))]
+    (assoc commit :author new-name)
+    commit))
+
+(comment
+
+  (sync-commits "多肽"
+                "../peptide"
+                (jt/local-date))
+  )
+
 
 
 (def cli-options
@@ -252,7 +384,6 @@
    ["-h" "--help"]])
 
 (defn -main
-  "I don't do a whole lot ... yet."
   [& args]
   (let [options (parse-opts args cli-options)
         dir     (get-in options [:options :repo :dir])
