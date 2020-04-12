@@ -234,10 +234,16 @@
 
 (def cli-options
   ;; An option with a required argument
-  [["-r" "--repo repo-dir" "repo directory"
+  [
+   ["-r" "--repo repo-dir" "repo directory"
     :default "."
-    :parse-fn #(io/file %)
-    :validate [#(.isDirectory %) "Must by a directory"]]
+    :parse-fn (fn [dir] {:file (io/file dir)
+                        :dir dir})
+    :validate [#(.isDirectory (:file %)) "Must by a directory"]]
+   ["-t" "--title project-name" "name"
+    :default "代码库xxxx"
+    :parse-fn str
+    :validate [string? "必须是一个string"]]
    ["-c" "--config config.edn" "config file"
     :default "config.edn"
     :parse-fn #(io/file %)
@@ -248,5 +254,17 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (let [options (parse-opts args cli-options)]
-    (println options)))
+  (let [options (parse-opts args cli-options)
+        dir     (get-in options [:options :repo :dir])
+        title   (get-in options [:options :title])]
+    (c/view
+     (c/category-chart
+      (category-chart-data (re-name (sync-stats dir (jt/local-date))))
+      {:title title
+       :width 600
+       :height 400
+       :render-style :line
+       :theme :xchart
+       :y-axis {}
+       :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
+    ))
