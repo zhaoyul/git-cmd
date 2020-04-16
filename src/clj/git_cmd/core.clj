@@ -130,38 +130,52 @@
              {}
              m))
 
-(defn current-date-str [date]
+(defn date-formatter
+  "foramt date to string"
+  [date]
   (jt/format "YYYY-MM-dd" date))
 
-(defn stats-file [repo date]
-  (str "./tmp/" repo "/" (current-date-str date) "-status.edn"
+(defn stats-file
+  "根据日期生成status缓存文件名"
+  [repo-dir date]
+  (str "./tmp/" repo-dir "/" (date-formatter date) "-status.edn"
        ))
 
-(defn processed? [repo date]
-  (.exists (io/file (stats-file repo date))))
+(defn cached?
+  "接受git库目录和日期判断缓存文件是否存在"
+  [repo-dir date]
+  (.exists (io/file (stats-file repo-dir date))))
 
 (comment
   (stats-file "customplatform" (jt/local-date))
-  (processed? "customplatform" (jt/local-date))
+  (cached? "customplatform" (jt/local-date))
   )
 
-(defn retrive-loc-from-file [repo date]
-  (->> (stats-file repo date)
+(defn retrive-loc-from-file
+  "从文件中读取[作者-行数]的统计数据"
+  [repo-dir date]
+  (->> (stats-file repo-dir date)
        slurp
        edn/read-string))
 
-(defn generate-loc-anew [repo date data]
-  (let [file (stats-file repo date)
+(defn generate-loc-anew
+  "重新生成作者-行数统计数据"
+  [repo-dir date data]
+  (let [file (stats-file repo-dir date)
         _ (io/make-parents file )]
-    (-> (stats-file repo date)
+    (-> (stats-file repo-dir date)
         (spit data))
     data))
 
-(defn repo-name [repo-dir]
+(defn repo-name
+  "从全路径中得到repo的最后一集的文件夹名称"
+  [repo-dir]
   (s/replace repo-dir #".*/" ""))
 
-(defn sync-stats [repo-dir date]
-  (if (processed? (repo-name repo-dir) date)
+(defn sync-stats
+  "得到[作者-行数]的统计数据"
+  [repo-dir date]
+  (if (cached? (repo-name repo-dir) date)
     (retrive-loc-from-file (repo-name repo-dir) date)
     (generate-loc-anew (repo-name repo-dir) date (authors-stats repo-dir) )))
 
