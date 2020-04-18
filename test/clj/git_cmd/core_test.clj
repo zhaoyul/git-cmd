@@ -66,9 +66,10 @@
       (t/is (not (file-end-with? (io/file "abc.abc.xf" ) "x-f")))))
 
 
+
+
   (t/deftest 测试repo相关
     (t/testing "第一组test"
-      (prn  (sut/authors-stats tmp-dir))
       (t/is (let [m (sut/authors-stats tmp-dir)]
               (and (map? m)
                    (= 1 (first (vals m))))) )
@@ -76,7 +77,6 @@
 
   (t/deftest 测试配置文件相关
     (t/testing "第一组test"
-      (prn  (sut/authors-stats tmp-dir))
       (t/is (let [m (sut/authors-stats tmp-dir)]
               (and (map? m)
                    (= 1 (first (vals m))))) )

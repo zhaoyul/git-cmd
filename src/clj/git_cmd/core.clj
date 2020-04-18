@@ -175,9 +175,9 @@
 (defn sync-stats
   "得到[作者-行数]的统计数据"
   [repo-dir date]
-  (if (cached? (repo-name repo-dir) date)
-    (retrive-loc-from-file (repo-name repo-dir) date)
-    (generate-loc-anew (repo-name repo-dir) date (authors-stats repo-dir) )))
+  (if (cached? repo-dir date)
+    (retrive-loc-from-file repo-dir date)
+    (generate-loc-anew repo-dir date (authors-stats repo-dir) )))
 
 
 ;; 人员对应关系也是要到配置文件
