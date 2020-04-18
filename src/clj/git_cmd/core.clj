@@ -12,6 +12,10 @@
 
 
 
+(def SRC-SUFFIX-SET #{"clj" "cljs" "js" "css" "sql" "vue" "java"})
+
+
+
 (defn- has-sub-dir?
   "判断dir下是否有名为 sub-dir-name 的子文件夹"
   [dir sub-dir-name]
@@ -40,17 +44,17 @@
   [f suffix]
   (s/ends-with? (.getName f) suffix))
 
-(def src-suffix-set #{"clj" "cljs" "js" "css" "sql" "vue" "java"})
-
-(defn- file-suffix
+(defn file-suffix
   "返回文件的后缀名"
   [file-name]
-  (s/replace file-name #".*\." "") )
+  (if (s/includes? file-name ".")
+    (s/replace file-name #".*\." "")
+    "") )
 
 (defn- is-src-file?
   "是否为源代码"
   [f]
-  (src-suffix-set (file-suffix (.getName f))))
+  (SRC-SUFFIX-SET (file-suffix (.getName f))))
 
 (defn- repo-root
   "获得repo相对于当前执行目录的位置, 为库调用做准备"

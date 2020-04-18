@@ -49,7 +49,10 @@
     ))
 
 (with-private-fns
-  [git-cmd.core [has-sub-dir? repo-dir? file-end-with?
+  [git-cmd.core [has-sub-dir?
+                 repo-dir?
+                 file-end-with?
+                 src-dir?
                  authors-stats]]
   (t/deftest 测试目录和文件相关操作
     (t/testing "第一组test"
@@ -63,7 +66,33 @@
       (t/is (not (file-end-with? (io/file "abc.abc.xf" ) "x-f")))))
 
 
+  (t/deftest 测试src-dirs
+    (t/testing "不是src目录的情况"
+      (t/is (not (src-dir? (clojure.java.io/file tmp-dir)))))
+    (t/testing "是src的情况"
+      (t/is (src-dir? (clojure.java.io/file tmp-src-dir))))
+    )
 
+  (t/deftest 测试函数file-end-with?
+    (t/testing "正确以后缀.cpp结束的情况"
+      (t/is (sut/file-end-with? (clojure.java.io/file "xxx.cpp")
+                                "cpp") )
+      )
+    (t/testing "不是以后缀.cpp结束的情况"
+      (t/is (not (sut/file-end-with? (clojure.java.io/file "xxx.pp")
+                                     "cpp")) )
+      ))
+
+  (t/deftest 测试函数file-suffix
+    (t/testing "正常后缀的情况"
+      (t/is (= "xyz" (sut/file-suffix "abc.xyz")) )
+      )
+    (t/testing "多个后缀的情况"
+      (t/is (= "xyz" (sut/file-suffix "www.abc.xyz")) )
+      )
+    (t/testing "没有后缀的情况"
+      (t/is (= "" (sut/file-suffix "xyz")) )
+      ))
 
   (t/deftest 测试repo相关
     (t/testing "第一组test"
