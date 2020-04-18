@@ -13,6 +13,43 @@
 
 
 (def SRC-SUFFIX-SET #{"clj" "cljs" "js" "css" "sql" "vue" "java"})
+;; 人员对应关系也是要到配置文件
+(def AUTHORS {"Nie JianLong"   "聂建龙"
+              "NieJianlong"    "聂建龙"
+              "chuanwu zhu"    "聂建龙"
+              "Kevin li"       "李照宇"
+              "Kevin.li"       "李照宇"
+              "kevin.li"       "李照宇"
+              "lizy"           "李照宇"
+              "dirk.sun"       "孙东和"
+              "Damon"          "沈友谊"
+              "Tony"           "杨鲁鹏"
+              "cisco.luo"      "罗德玉"
+              "leilei.s"       "孙磊磊"
+              "zhanghongyi"    "张弘毅"
+              "David Wu"       "吴伟"
+              "alisa.yang"     "杨柳"
+              "visen_lu"       "陆卫新"
+              "vise.lu"        "陆卫新"
+              "Murphy"         "贺茂丰"
+              "ElbertY"        "依力"
+              "Anna"           "赵阳"
+              "maofeng"        "贺茂丰"
+              "MaoFeng"        "贺茂丰"
+              "hcops"          "hcops..who??"
+              "ranmingsheng"   "冉明生"
+              "chris"          "冉明生"
+              "chirs"          "冉明生"
+              "ben"            "冉明生"
+              "marvin ma"      "马海强"
+              "strongfish"     "于壮壮"
+              "eric shao"      "邵夔"
+              "cui"            "崔云鹏"
+              "eric"           "崔云鹏"
+              "eric.cui"       "崔云鹏"
+              "henrydf"        "丁凡"
+              "WYX"            "丁凡"
+              "Henry"          "丁凡"})
 
 
 
@@ -139,11 +176,19 @@
   [date]
   (jt/format "YYYY-MM-dd" date))
 
+(defn repo-name-from-dir [repo-dir]
+  (-> repo-dir
+      clojure.java.io/file
+      .getAbsolutePath
+      (s/replace #".*/" "")))
+
 (defn stats-file
   "根据日期生成status缓存文件名"
   [repo-dir date]
-  (str "./tmp/" repo-dir "/" (date-formatter date) "-status.edn"
-       ))
+  (let [repo-name (repo-name-from-dir repo-dir)
+        date-str  (date-formatter date)]
+    (str "./tmp/" repo-name "/" date-str "-status.edn"
+         )))
 
 (defn cached?
   "接受git库目录和日期判断缓存文件是否存在"
@@ -184,62 +229,18 @@
     (generate-loc-anew repo-dir date (authors-stats repo-dir) )))
 
 
-;; 人员对应关系也是要到配置文件
-(def authors {"Nie JianLong"   "聂建龙"
-              "NieJianlong"    "聂建龙"
-              "chuanwu zhu"    "聂建龙"
-              "Kevin li"       "李照宇"
-              "Kevin.li"       "李照宇"
-              "kevin.li"       "李照宇"
-              "lizy"           "李照宇"
-              "dirk.sun"       "孙东和"
-              "Damon"          "沈友谊"
-              "Tony"           "杨鲁鹏"
-              "cisco.luo"      "罗德玉"
-              "leilei.s"       "孙磊磊"
-              "zhanghongyi"    "张弘毅"
-              "David Wu"       "吴伟"
-              "alisa.yang"     "杨柳"
-              "visen_lu"       "陆卫新"
-              "vise.lu"        "陆卫新"
-              "Murphy"         "贺茂丰"
-              "ElbertY"        "依力"
-              "Anna"           "赵阳"
-              "maofeng"        "贺茂丰"
-              "MaoFeng"        "贺茂丰"
-              "hcops"          "hcops..who??"
-              "ranmingsheng"   "冉明生"
-              "chris"          "冉明生"
-              "chirs"          "冉明生"
-              "ben"            "冉明生"
-              "marvin ma"      "马海强"
-              "strongfish"     "于壮壮"
-              "eric shao"      "邵夔"
-              "cui"            "崔云鹏"
-              "eric"           "崔云鹏"
-              "eric.cui"       "崔云鹏"
-              "henrydf"        "丁凡"
-              "WYX"            "丁凡"
-              "Henry"          "丁凡"})
-
-(defn category-chart-data [m]
-  (reduce-kv (fn [m k v]
-               (assoc-in m [(:name k) (:file k)] v))
-             {}
-             m))
-
 (defn re-name [input]
   (reduce-kv (fn [m k v]
-               (if (get authors (:name k))
+               (if (get AUTHORS (:name k))
                  (assoc m
-                        {:name (get authors (:name k)) :file (:file k)}
-                        (+ v (or (get m {:name (get authors (:name k)) :file (:file k)} ) 0)  ))
+                        {:name (get AUTHORS (:name k)) :file (:file k)}
+                        (+ v (or (get m {:name (get AUTHORS (:name k)) :file (:file k)} ) 0)  ))
                  (assoc m k v))) {} input))
 
 (comment
   (c/view
    (c/category-chart
-    (category-chart-data (re-name (sync-stats "../peptide" (jt/local-date))))
+    (category-chart-data (re-name (sync-stats "../customplatform" (jt/local-date))))
     {:title "多肽代码分析"
      :width 600
      :height 400
@@ -369,7 +370,7 @@
 
 
 (defn re-name-commit [commit]
-  (if-let [new-name (authors (:author commit))]
+  (if-let [new-name (AUTHORS (:author commit))]
     (assoc commit :author new-name)
     commit))
 
