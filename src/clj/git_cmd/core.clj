@@ -1,4 +1,5 @@
 (ns git-cmd.core
+  "使用git来统计工作量"
   (:require [clojure.java.io :as io]
             [clojure.string :as s]
             [clojure.pprint :refer [pprint]]
@@ -11,7 +12,7 @@
   (:gen-class))
 
 
-
+;;; 配置部分, 最终会放到文件中
 (def SRC-SUFFIX-SET #{"clj" "cljs" "js" "css" "sql" "vue" "java"})
 ;; 人员对应关系也是要到配置文件
 (def AUTHORS {"Nie JianLong"   "聂建龙"
@@ -52,6 +53,7 @@
               "Henry"          "丁凡"})
 
 
+;;; 目录操作
 
 (defn- has-sub-dir?
   "判断dir下是否有名为 sub-dir-name 的子文件夹"
@@ -153,6 +155,7 @@
 
 
 (defn authors-stats [repo-dir-path]
+  {:pre [(repo-dir? (io/file repo-dir-path))]}
   (let [repo (load-repo repo-dir-path)]
     (->> repo-dir-path
          io/file
@@ -238,6 +241,20 @@
                  (assoc m k v))) {} input))
 
 (comment
+
+  (sync-stats "../tmp" (jt/local-date))
+
+  (c/view
+   (c/category-chart
+    (category-chart-data (re-name (sync-stats "../cosmo-test-platform" (jt/local-date))))
+    {:title "cosmo测试平台"
+     :width 600
+     :height 400
+     :render-style :line
+     :theme :xchart
+     :y-axis {}
+     :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
+
   (c/view
    (c/category-chart
     (category-chart-data (re-name (sync-stats "../customplatform" (jt/local-date))))
@@ -377,7 +394,7 @@
 (comment
 
   (sync-commits "多肽"
-                "../peptide"
+                "../cosmo-test-platform"
                 (jt/local-date))
   )
 
