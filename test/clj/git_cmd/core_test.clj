@@ -11,9 +11,6 @@
   `(let ~(reduce #(conj %1 %2 `(ns-resolve '~ns '~%2)) [] fns)
      ~@tests))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 1 1))))
 
 
 (def ^:private tmp-dir "/tmp/git-test/")
