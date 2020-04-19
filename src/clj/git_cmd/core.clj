@@ -394,11 +394,11 @@
       (.toInstant)
       (java.util.Date/from)))
 
-(defn in-peroid [start end now]
+(defn in-peroid [start end date-time]
   (let [s (jt-local-date->util-date start)
         e (jt-local-date->util-date end)]
-    (and (neg? (compare s   now ))
-         (neg? (compare now e)))))
+    (and (neg? (compare s   date-time ))
+         (neg? (compare date-time e)))))
 
 
 
@@ -426,6 +426,23 @@
   (case peroid
     :monthly (monthly-commits commits)))
 
+(defn first-day-of-week [year n]
+  (jt/with-value
+    (jt/property (jt/local-date year) :week-of-week-based-year)
+    n))
+
+(defn filter-commits [{:keys [year month week unit]} commit]
+  (case unit
+    :month (let [date-time (:time commit)
+                 start-month-date (jt/local-date year month)
+                 end-month-date (jt/plus start-month-date (jt/months 1))]
+             (in-peroid start-month-date end-month-date date-time)
+             )
+    :week (let [date-time (:time commit)
+                end-week-date (first-day-of-week year week)
+                start-week-date (jt/minus end-week-date (jt/weeks 1))]
+            (in-peroid start-week-date end-week-date date-time))))
+
 (defn commit-count-by-author [commits]
   (->> commits
        (map (fn [m] (assoc m :author (mapping-author-name (:author m)))))
@@ -450,12 +467,14 @@
 
 (defn merge-changes-count [v]
   (reduce (fn [r {:keys [file-type added deleted]}]
-            (assoc r file-type (+ added deleted (get r file-type 0))))
+            (when (SRC-SUFFIX-SET file-type)
+              (assoc r file-type (+ added deleted (get r file-type 0)))))
           {}
           v))
 
 (defn process-commit-stats [commits]
   (->> commits
+       (filter #(not (:merge %)) )
        (map re-name-commit)
        (group-by :author)
        (reduce-kv (fn [m k v]
@@ -486,9 +505,12 @@
 
   (c/view
    (c/category-chart
-    (process-commit-stats (sync-commits "定制平台"
-                                        "../customplatform"
-                                        (jt/local-date)) )
+    (process-commit-stats (filter (partial filter-commits {:unit :week
+                                                           :year 2020
+                                                           :week 18}  )
+                                  (sync-commits "定制平台"
+                                                "../customplatform"
+                                                (jt/local-date)))                          )
     {:title "定制平台"
      :width 600
      :height 400
