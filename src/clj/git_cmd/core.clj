@@ -23,6 +23,7 @@
               "NieJianlong"    "聂建龙"
               "chuanwu zhu"    "聂建龙"
               "Kevin li"       "李照宇"
+              "mac"            "李照宇"
               "Kevin.li"       "李照宇"
               "kevin.li"       "李照宇"
               "lizy"           "李照宇"
@@ -512,6 +513,22 @@
                                                 "../customplatform"
                                                 (jt/local-date)))                          )
     {:title "定制平台"
+     :width 600
+     :height 400
+     :render-style :line
+     :theme :xchart
+     :y-axis {}
+     :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
+
+  (c/view
+   (c/category-chart
+    (process-commit-stats (filter (partial filter-commits {:unit :month
+                                                           :year 2020
+                                                           :month 4}  )
+                                  (sync-commits "代码统计系统"
+                                                "../git-cmd"
+                                                (jt/local-date)))                          )
+    {:title "代码统计系统"
      :width 600
      :height 400
      :render-style :line
