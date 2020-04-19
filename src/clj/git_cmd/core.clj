@@ -280,26 +280,27 @@
   (->>  (rev-list repo)
         (map  (partial commit-info repo))))
 
-(defn- rev-diff
+(defn- commit-diff
   "返回当前commit对应的patch, 返回值是patch的文本"
-  [rev-m]
-  (changed-files-with-patch (:repo rev-m) (:raw rev-m)))
+  [commit]
+  (changed-files-with-patch (:repo commit) (:raw commit)))
 
-(defn- count-commit-lines
-  "为commit-map增加一个新的key, :add-delete 记录了修改的行数"
-  [rev]
-  (assoc
-   rev
-   :add-delete
-   (if-let [patch (rev-diff rev)]
-     {:add-line (count (re-seq #"\n\+" patch))
-      :delete-line (count (re-seq #"\n\-" patch))}
-     {:add-line 0
-      :delete-line 0})))
+(defn parse-diff [diff-str]
+  (some->> diff-str
+           (s/split-lines)
+           (partition-by (fn [s] (s/starts-with? s "diff")))
+           (partition 2 2)
+           (map (fn [[file-lst diff-lst]]
+                  {:file-type (file-suffix (first file-lst))
+                   :added (count (filter
+                                  (fn [l] (and (s/starts-with? l "+")
+                                              (not (s/starts-with? l "+++"))))
+                                  diff-lst))
+                   :deleted (count (filter
+                                    (fn [l] (and (s/starts-with? l "-")
+                                                (not (s/starts-with? l "---"))))
+                                    diff-lst))}))))
 
-#_(defn all-diffs [repo]
-    (->>  (rev-list repo)
-          (map  (partial count-commit-lines repo))))
 
 (defn time->date
   "java.util.Date -> java-time的localdate"
@@ -346,7 +347,12 @@
         data (->> repo-dir
                   load-repo
                   all-commits
+                  (map (fn [commit]
+                         (assoc commit :diff (commit-diff commit))))
+                  (map (fn [commit]
+                         (assoc commit :changes (parse-diff (:diff commit)))))
                   (map #(select-keys % [:email
+                                        :changes
                                         :time
                                         :branches
                                         :merge
@@ -435,6 +441,11 @@
     (c/view (c/pie-chart (commit-count-by-author (second partition-commits)))))
   )
 
+
+
+
+
+
 (comment
 
   (commit-count-by-author (sync-commits "定制平台"
@@ -446,6 +457,11 @@
   (sync-commits "定制平台"
                 "../customplatform"
                 (jt/local-date))
+  (sync-commits "代码统计"
+                "../git-cmd"
+                (jt/local-date))
+
+  (category-chart-data (sync-stats "../customplatform" (jt/local-date)))
   )
 
 
