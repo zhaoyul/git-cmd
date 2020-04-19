@@ -15,7 +15,11 @@
 ;;; 配置部分, 最终会放到文件中
 (def SRC-SUFFIX-SET #{"clj" "cljs" "js" "css" "sql" "vue" "java"})
 ;; 人员对应关系也是要到配置文件
-(def AUTHORS {"Nie JianLong"   "聂建龙"
+(def AUTHORS {"sunx113@139.com" "孙岩"
+              "sunx113"        "孙岩"
+              "andyhuang"      "黄超"
+              "redcreation"    "amdin"
+              "Nie JianLong"   "聂建龙"
               "NieJianlong"    "聂建龙"
               "chuanwu zhu"    "聂建龙"
               "Kevin li"       "李照宇"
@@ -23,6 +27,7 @@
               "kevin.li"       "李照宇"
               "lizy"           "李照宇"
               "dirk.sun"       "孙东和"
+              "Dirk"           "孙东和"
               "Damon"          "沈友谊"
               "Tony"           "杨鲁鹏"
               "cisco.luo"      "罗德玉"
@@ -49,6 +54,7 @@
               "eric"           "崔云鹏"
               "eric.cui"       "崔云鹏"
               "henrydf"        "丁凡"
+              "henry"          "丁凡"
               "WYX"            "丁凡"
               "Henry"          "丁凡"})
 
@@ -391,10 +397,54 @@
     (assoc commit :author new-name)
     commit))
 
+(defn mapping-author-names [git-author-name]
+  (or (AUTHORS git-author-name) git-author-name))
+
+(defn time->first-day-of-month [time]
+  (-> time
+      time->date
+      (jt/adjust :first-day-of-month)))
+
+(defn monthly-commits [commits]
+  (->> commits
+       (partition-by (fn [commit] (time->first-day-of-month (:time commit)))))
+  )
+
+(defn partion-commits-by [commits peroid]
+  (case peroid
+    :monthly (monthly-commits commits) ))
+
+(defn commit-count-by-author [commits]
+  (->> commits
+       (map (fn [m] (assoc m :author (mapping-author-names (:author m)))))
+       (group-by :author)
+       (reduce-kv (fn [m k v]
+                    (assoc m k (count v)))
+                  {})))
+
+(defn gen-commit-chart [repo-name
+                        repo-dir
+                        {:keys [last-commit-date period]
+                         :or {last-commit-date (jt/local-date)
+                              period           :monthly}}]
+  (let [commits (sync-commits repo-name
+                              repo-dir
+                              last-commit-date)
+        partition-commits (partion-commits-by commits period)]
+
+    (c/view (c/pie-chart (commit-count-by-author (second partition-commits)))))
+  )
+
 (comment
 
-  (sync-commits "多肽"
-                "../cosmo-test-platform"
+  (commit-count-by-author (sync-commits "定制平台"
+                                        "../customplatform"
+                                        (jt/local-date)) )
+  (gen-commit-chart "定制平台"
+                    "../customplatform"
+                    {:last-commit-date (jt/local-date)} )
+  (sync-commits "定制平台"
+                "../customplatform"
                 (jt/local-date))
   )
 
