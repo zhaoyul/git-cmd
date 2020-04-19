@@ -398,13 +398,15 @@
 
 
 
+
+
+(defn mapping-author-name [git-authr-name]
+  (or (AUTHORS git-authr-name) git-authr-name))
+
 (defn re-name-commit [commit]
-  (if-let [new-name (AUTHORS (:author commit))]
+  (if-let [new-name (mapping-author-name (:author commit))]
     (assoc commit :author new-name)
     commit))
-
-(defn mapping-author-name [git-author-name]
-  (or (AUTHORS git-author-name) git-author-name))
 
 (defn time->first-day-of-month [time]
   (-> time
@@ -442,6 +444,23 @@
   )
 
 
+(defn merge-changes-count [v]
+  (reduce (fn [r {:keys [file-type added deleted]}]
+            (assoc r file-type (+ added deleted (get r file-type 0))))
+          {}
+          v))
+
+(defn process-commit-stats [commits]
+  (->> commits
+       (map re-name-commit)
+       (group-by :author)
+       (reduce-kv (fn [m k v]
+                    (assoc m k (mapcat :changes v)))
+                  {})
+       (reduce-kv (fn [m k v]
+                    (assoc m k (merge-changes-count v)))
+                  {})))
+
 
 
 
@@ -461,7 +480,30 @@
                 "../git-cmd"
                 (jt/local-date))
 
-  (category-chart-data (sync-stats "../customplatform" (jt/local-date)))
+  (c/view
+   (c/category-chart
+    (process-commit-stats (sync-commits "定制平台"
+                                        "../customplatform"
+                                        (jt/local-date)))
+    {:title "定制平台"
+     :width 600
+     :height 400
+     :render-style :line
+     :theme :xchart
+     :y-axis {}
+     :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
+
+
+  (c/view
+   (c/category-chart
+    (category-chart-data (re-name (sync-stats "../customplatform" (jt/local-date))))
+    {:title "定制平台"
+     :width 600
+     :height 400
+     :render-style :line
+     :theme :xchart
+     :y-axis {}
+     :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
   )
 
 
