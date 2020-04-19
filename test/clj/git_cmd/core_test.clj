@@ -91,7 +91,13 @@
       (t/is (= "xyz" (sut/file-suffix "www.abc.xyz")) )
       )
     (t/testing "没有后缀的情况"
-      (t/is (= "" (sut/file-suffix "xyz")) )
+      (t/is (= "xyz" (sut/file-suffix "xyz")) )
+      )
+    (t/testing "有乱字符的情况"
+      (t/is (= "abc" (sut/file-suffix "xyz.abc\"")) )
+      )
+    (t/testing "有数字的情况"
+      (t/is (= "abc" (sut/file-suffix "xyz.abc045\"")) )
       ))
 
   (t/deftest 测试repo相关

@@ -93,8 +93,12 @@
   "返回文件的后缀名"
   [file-name]
   (if (s/includes? file-name ".")
-    (s/replace file-name #".*\." "")
-    "") )
+    (s/replace (s/replace (s/replace file-name #".*\." "")
+                          #"\W+"
+                          "")
+               #"\d+"
+               "")
+    file-name) )
 
 (defn- is-src-file?
   "是否为源代码"
@@ -484,7 +488,7 @@
    (c/category-chart
     (process-commit-stats (sync-commits "定制平台"
                                         "../customplatform"
-                                        (jt/local-date)))
+                                        (jt/local-date)) )
     {:title "定制平台"
      :width 600
      :height 400
@@ -492,7 +496,6 @@
      :theme :xchart
      :y-axis {}
      :x-axis {:order ["cljs" "clj" "sql" "css" "js"]}}))
-
 
   (c/view
    (c/category-chart
