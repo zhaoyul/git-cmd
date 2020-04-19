@@ -397,7 +397,7 @@
     (assoc commit :author new-name)
     commit))
 
-(defn mapping-author-names [git-author-name]
+(defn mapping-author-name [git-author-name]
   (or (AUTHORS git-author-name) git-author-name))
 
 (defn time->first-day-of-month [time]
@@ -412,11 +412,11 @@
 
 (defn partion-commits-by [commits peroid]
   (case peroid
-    :monthly (monthly-commits commits) ))
+    :monthly (monthly-commits commits)))
 
 (defn commit-count-by-author [commits]
   (->> commits
-       (map (fn [m] (assoc m :author (mapping-author-names (:author m)))))
+       (map (fn [m] (assoc m :author (mapping-author-name (:author m)))))
        (group-by :author)
        (reduce-kv (fn [m k v]
                     (assoc m k (count v)))
