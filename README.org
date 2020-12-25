@@ -1,10 +1,71 @@
 * 目标
 ** 地址: https://github.com/zhaoyul/git-cmd
-** 一个命令行工具
+** 一个命令行工具/库
+** 工作流程
+   #+BEGIN_SRC ditaa
+
+     +---------------------+
+     |   repo directory    |     ;; a dir containing a .git subdir
+     +----------+----------+
+                |
+                |
+     +----------+----------+
+     |    find all src     |     ;; exclude resoruces, 3party files, configurations dirs
+     +----------+----------+
+                |
+                |
+     +----------v----------+
+     |    find all commits |     ;; find all distinct commits(on all branches)
+     +----------+----------+
+                |
+                |
+                |
+     +----------v----------+
+     |    author mapping   |     ;; kevin.li kevin lizy are the same person
+     +----------+----------+
+                |
+                |
+                |
+                |
+     +----------v----------+
+     |ignore certain diffs |     ;; exclude certain files (generated files)
+     +----------+----------+
+                |
+                |
+                |
+     +----------v----------+
+     | count dif| lines    |     ;; added, or deleted lines for certain commit
+     +----------+----------+
+                |
+                |                   +-------------------------------------------------+
+                |                   | charts                                          |
+                |                   |                                                 |
+     +----------v----------+        |   1. commits by cretain author (per week,month) |
+     | List of all commits |        |   2. lines connts per mohth|week per author     |
+     | with date, changed  +-------->   3. commits by time range every 4 hours.       |
+     | line nums and author|        |   4. commits count distribution by author       |
+     +----------+----------+        |   5. line count distribution by author          |
+                |                   |   6. file type line counts distribution         |
+                |                   |   7. etc.                                       |
+                |                   |                                                 |
+                |                   +-------------------------------------------------+
+     +----------+----------+        | overview charts                                 |
+     |  combining repos    +-------->   1. line connts per repo                       |
+     +---------------------+        |   2. commits counts per repo                    |
+                                    |   3. etc.                                       |
+                                    +-------------------------------------------------+
+   #+END_SRC
 ** 命令行接受的参数
    - -r "repo-dir" -t "title"
    - -c "config.edn"
 **** config.edn
+     #+BEGIN_SRC clojure
+       {:repos [{:url "https://github.com/zhaoyul/snippets.git"   ;; git address
+                 :name "代码片段"                                 ;; will show in charts
+                 :authors {"lizy" "李照宇"                        ;; author mapping
+                           "kevin.li" "李照宇"}}]}
+
+     #+END_SRC
      - 需要分析的远端的git地址
      - repo的名字
      - 需要配置git作者的映射
